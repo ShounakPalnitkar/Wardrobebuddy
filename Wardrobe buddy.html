@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wardrobe Buddy - Your Personal Stylist Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0a0a0f;
+            --secondary-bg: #12121c;
+            --chat-bg: #1a1a2e;
+            --user-bg: #2d2d44;
+            --bot-bg: #252538;
+            --accent: #8b5cf6;
+            --accent-light: #a78bfa;
+            --accent-glow: rgba(139, 92, 246, 0.2);
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            height: 90vh;
+            margin: 0 auto;
+            background: var(--secondary-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            padding: 25px;
+            background: var(--chat-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .header-info h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, var(--text-primary), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-info p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            opacity: 0.8;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            background: var(--primary-bg);
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 3px;
+        }
+
+        /* Messages */
+        .message {
+            margin-bottom: 25px;
+            opacity: 0;
+            animation: messageAppear 0.3s ease forwards;
+        }
+
+        @keyframes messageAppear {
+            to { opacity: 1; }
+        }
+
+        .message-bot {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .message-user {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+
+        .message-bot .message-avatar {
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .message-user .message-avatar {
+            background: var(--user-bg);
+            color: var(--accent-light);
+        }
+
+        .message-content {
+            max-width: 75%;
+            position: relative;
+        }
+
+        .message-bubble {
+            padding: 18px 22px;
+            border-radius: 22px;
+            position: relative;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message-bot .message-bubble {
+            background: var(--bot-bg);
+            color: var(--text-primary);
+            border-top-left-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .message-bot .message-bubble::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 15px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 8px 8px 0;
+            border-color: transparent var(--bot-bg) transparent transparent;
+        }
+
+        .message-user .message-bubble {
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            color: white;
+            border-top-right-radius: 8px;
+            box-shadow: 0 5px 20px var(--accent-glow);
+        }
+
+        .message-user .message-bubble::before {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 15px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 0 8px 8px;
+            border-color: transparent transparent transparent var(--accent);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            padding: 18px 22px;
+            background: var(--bot-bg);
+            border-radius: 22px;
+            border-top-left-radius: 8px;
+            margin-bottom: 25px;
+            width: fit-content;
+        }
+
+        .typing-indicator span {
+            height: 10px;
+            width: 10px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+            margin-right: 0;
+        }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Quick Options */
+        .quick-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .option-btn {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: var(--accent-light);
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .option-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--accent-glow);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--chat-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h3 {
+            color: var(--accent-light);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* Checklist */
+        .checklist {
+            list-style: none;
+            margin: 15px 0;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .checklist-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(139, 92, 246, 0.2);
+            transform: translateX(5px);
+        }
+
+        .checklist-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-muted);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .checklist-item.completed .checklist-checkbox {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .checklist-text {
+            flex: 1;
+            color: var(--text-secondary);
+        }
+
+        .checklist-item.completed .checklist-text {
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px;
+            background: var(--chat-bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #userInput {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--primary-bg);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        #userInput:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        #userInput::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s ease;
+            box-shadow: 0 5px 20px var(--accent-glow);
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px var(--accent-glow);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            padding: 20px;
+            background: var(--chat-bg);
+            border-top: 1px solid var(--border);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .progress-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-value {
+            font-weight: 600;
+            color: var(--accent-light);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #7c3aed);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Emoji Reactions */
+        .emoji-reactions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .emoji-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .emoji-btn:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--primary-bg);
+            border-radius: 24px;
+            margin: 20px;
+            display: none;
+        }
+
+        .welcome-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome-screen h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .welcome-screen p {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 10px 30px var(--accent-glow);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px var(--accent-glow);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                height: 95vh;
+                border-radius: 16px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .avatar {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+            
+            .input-area {
+                padding: 15px;
+            }
+        }
+
+        /* Animation for new messages */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div class="welcome-screen" id="welcomeScreen">
+            <div class="welcome-icon">👔</div>
+            <h2>Hey there! I'm your Wardrobe Buddy 👋</h2>
+            <p>I'm here to help you organize your wardrobe like a pro. Let's chat and create your perfect clothing system together!</p>
+            <button class="start-btn" onclick="startChat()">Let's Get Started! 🚀</button>
+        </div>
+
+        <!-- Main Chat Interface -->
+        <div id="chatInterface" style="display: none; flex-direction: column; height: 100%;">
+            <!-- Header -->
+            <div class="header">
+                <div class="avatar">👔</div>
+                <div class="header-info">
+                    <h1>Wardrobe Buddy</h1>
+                    <p>Your personal stylist & organization assistant</p>
+                    <div class="status">
+                        <div class="status-dot"></div>
+                        <span>Online • Ready to help</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Container -->
+            <div class="chat-container" id="chatContainer">
+                <!-- Messages will be added here by JavaScript -->
+                <div class="typing-indicator" id="typingIndicator">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-header">
+                    <span class="progress-label">Wardrobe Setup Progress</span>
+                    <span class="progress-value" id="progressValue">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <input type="text" id="userInput" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
+                </div>
+                <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chatbot State
+        const chatbot = {
+            name: "Wardrobe Buddy",
+            user: "Friend",
+            step: 0,
+            progress: 0,
+            userPreferences: {},
+            tasksCompleted: [],
+            conversation: []
+        };
+
+        // Conversation Flow
+        const conversationFlow = [
+            {
+                bot: "👋 Hey there! I'm your Wardrobe Buddy! I'm here to help you organize your clothes like a pro. What's your name?",
+                type: "text",
+                expects: "name"
+            },
+            {
+                bot: "Nice to meet you, {name}! 👋 Let's start with a simple question: How would you describe your current wardrobe situation?",
+                type: "options",
+                options: ["🔄 Overwhelmed and cluttered", "📦 Disorganized but okay", "🎯 Pretty organized, needs tweaks", "✨ Very organized, want pro tips"],
+                expects: "wardrobe_state"
+            },
+            {
+                bot: "Got it! Based on that, I have some great ideas for you. Now, what's your main goal for organizing your wardrobe?",
+                type: "options",
+                options: ["⏰ Save time getting dressed", "👗 Create more outfit options", "🧹 Declutter and simplify", "💼 Better organization system"],
+                expects: "main_goal"
+            },
+            {
+                bot: "Perfect! I love that goal. Let me show you a simple but powerful principle to start with:",
+                type: "card",
+                card: {
+                    title: "✨ The 80/20 Rule",
+                    content: "Most people wear 20% of their clothes 80% of the time. Our first step is to identify YOUR 20% - the clothes you actually love wearing!"
+                },
+                expects: "acknowledge"
+            },
+            {
+                bot: "Ready for your first task? It's super simple and will make a huge difference!",
+                type: "checklist",
+                checklist: [
+                    "Take out all clothes you haven't worn in over a year",
+                    "Set aside items that need repair or cleaning",
+                    "Identify your 5 most-worn outfits"
+                ],
+                expects: "first_task"
+            },
+            {
+                bot: "Great job! 🎉 Now let's talk about colors. What colors do you feel most confident wearing?",
+                type: "options",
+                options: ["🎨 Neutrals (black, white, gray)", "🌈 Bright and bold colors", "🌿 Earth tones", "🌸 Pastels", "🤷 I'm not sure"],
+                expects: "color_preference"
+            },
+            {
+                bot: "Awesome choice! Based on that, here's your personalized color system:",
+                type: "card",
+                card: {
+                    title: "🎨 Your Color System",
+                    content: "60% Neutrals (base) • 30% Your chosen colors • 10% Accent colors for fun! This ratio makes mixing and matching effortless."
+                },
+                expects: "acknowledge"
+            },
+            {
+                bot: "Want to see some outfit combinations using your color palette?",
+                type: "options",
+                options: ["Yes, show me!", "Maybe later", "I have specific items in mind"],
+                expects: "outfit_help"
+            },
+            {
+                bot: "Let's create a simple capsule wardrobe! How many seasons do you experience?",
+                type: "options",
+                options: ["❄️ One main season", "🌦️ Two seasons", "🌤️ Three seasons", "🌞 Four distinct seasons"],
+                expects: "seasons"
+            },
+            {
+                bot: "Perfect! Here's your seasonal capsule plan:",
+                type: "checklist",
+                checklist: [
+                    "10-15 tops (mix of casual and dressy)",
+                    "4-6 bottoms (pants, skirts, shorts)",
+                    "2-3 layers (jackets, cardigans)",
+                    "3-5 pairs of shoes",
+                    "Accessories to mix things up"
+                ],
+                expects: "capsule_plan"
+            },
+            {
+                bot: "Now for the fun part - organizing! What's your wardrobe space like?",
+                type: "options",
+                options: ["👕 Closet only", "👖 Closet + drawers", "🧥 Walk-in closet", "📦 Limited space"],
+                expects: "space_type"
+            },
+            {
+                bot: "Based on your space, here are my top organization tips:",
+                type: "card",
+                card: {
+                    title: "📐 Space Optimization",
+                    content: "• Use matching hangers for uniformity\n• Store off-season clothes elsewhere\n• Arrange by category then color\n• Use clear bins for accessories"
+                },
+                expects: "acknowledge"
+            },
+            {
+                bot: "You're doing amazing! 🚀 Want to set up a maintenance routine to keep your wardrobe organized?",
+                type: "options",
+                options: ["Yes, let's do it!", "Maybe next time", "Just tips please"],
+                expects: "maintenance"
+            },
+            {
+                bot: "Here's your simple maintenance plan:",
+                type: "checklist",
+                checklist: [
+                    "Weekly: Put away clean clothes immediately",
+                    "Monthly: Check for repairs needed",
+                    "Seasonal: Rotate clothes for next season",
+                    "Yearly: Full wardrobe review"
+                ],
+                expects: "maintenance_plan"
+            },
+            {
+                bot: "🎉 CONGRATULATIONS! You've completed your wardrobe setup journey! Here's your progress summary:",
+                type: "completion",
+                expects: "complete"
+            }
+        ];
+
+        // Initialize chat
+        window.onload = function() {
+            showWelcomeScreen();
+        };
+
+        function showWelcomeScreen() {
+            document.getElementById('welcomeScreen').style.display = 'block';
+            document.getElementById('chatInterface').style.display = 'none';
+        }
+
+        function startChat() {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('chatInterface').style.display = 'flex';
+            
+            // Start the conversation
+            setTimeout(() => {
+                showBotMessage(conversationFlow[0].bot);
+            }, 500);
+        }
+
+        // Display bot message
+        function showBotMessage(message, type = "text", options = null, checklist = null, card = null) {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            // Create message element
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-bot';
+            messageDiv.style.animationDelay = '0.1s';
+            
+            // Add avatar
+            messageDiv.innerHTML = `
+                <div class="message-avatar">👔</div>
+                <div class="message-content">
+                    <div class="message-bubble">${message}</div>
+                    <span class="message-time">${getCurrentTime()}</span>
+                </div>
+            `;
+            
+            chatContainer.appendChild(messageDiv);
+            
+            // Add additional elements based on type
+            if (type === "options" && options) {
+                addOptions(options);
+            } else if (type === "checklist" && checklist) {
+                addChecklist(checklist);
+            } else if (type === "card" && card) {
+                addCard(card);
+            } else if (type === "completion") {
+                showCompletion();
+            }
+            
+            // Scroll to bottom
+            scrollToBottom();
+            
+            // Record in conversation
+            chatbot.conversation.push({
+                from: 'bot',
+                message: message,
+                type: type,
+                time: new Date()
+            });
+        }
+
+        // Display user message
+        function showUserMessage(message) {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message message-user';
+            messageDiv.style.animationDelay = '0.1s';
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">😊</div>
+                <div class="message-content">
+                    <div class="message-bubble">${message}</div>
+                    <span class="message-time">${getCurrentTime()}</span>
+                </div>
+            `;
+            
+            chatContainer.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            scrollToBottom();
+            
+            // Record in conversation
+            chatbot.conversation.push({
+                from: 'user',
+                message: message,
+                time: new Date()
+            });
+        }
+
+        // Add quick options
+        function addOptions(options) {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'quick-options';
+            
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = option;
+                button.onclick = function() {
+                    handleOptionClick(option);
+                };
+                optionsDiv.appendChild(button);
+            });
+            
+            chatContainer.appendChild(optionsDiv);
+            scrollToBottom();
+        }
+
+        // Add checklist
+        function addChecklist(items) {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            const checklistDiv = document.createElement('ul');
+            checklistDiv.className = 'checklist';
+            
+            items.forEach((item, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'checklist-item';
+                listItem.id = `task-${chatbot.step}-${index}`;
+                listItem.onclick = function() {
+                    toggleTask(this.id);
+                };
+                
+                listItem.innerHTML = `
+                    <div class="checklist-checkbox"></div>
+                    <div class="checklist-text">${item}</div>
+                `;
+                
+                checklistDiv.appendChild(listItem);
+            });
+            
+            chatContainer.appendChild(checklistDiv);
+            scrollToBottom();
+        }
+
+        // Add card
+        function addCard(card) {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+            
+            cardDiv.innerHTML = `
+                <h3>${card.title}</h3>
+                <p>${card.content.replace(/\n/g, '<br>')}</p>
+            `;
+            
+            chatContainer.appendChild(cardDiv);
+            scrollToBottom();
+        }
+
+        // Handle option clicks
+        function handleOptionClick(option) {
+            showUserMessage(option);
+            
+            // Remove options after selection
+            const options = document.querySelector('.quick-options');
+            if (options) options.remove();
+            
+            // Process response based on current step
+            processUserResponse(option);
+        }
+
+        // Toggle task completion
+        function toggleTask(taskId) {
+            const task = document.getElementById(taskId);
+            task.classList.toggle('completed');
+            
+            const checkbox = task.querySelector('.checklist-checkbox');
+            if (task.classList.contains('completed')) {
+                checkbox.innerHTML = '✓';
+                
+                // Add to completed tasks
+                if (!chatbot.tasksCompleted.includes(taskId)) {
+                    chatbot.tasksCompleted.push(taskId);
+                    updateProgress();
+                }
+            } else {
+                checkbox.innerHTML = '';
+                
+                // Remove from completed tasks
+                const index = chatbot.tasksCompleted.indexOf(taskId);
+                if (index > -1) {
+                    chatbot.tasksCompleted.splice(index, 1);
+                    updateProgress();
+                }
+            }
+        }
+
+        // Process user responses
+        function processUserResponse(response) {
+            const currentStep = conversationFlow[chatbot.step];
+            
+            // Store user response
+            if (currentStep.expects === "name") {
+                chatbot.user = response;
+                chatbot.userPreferences.name = response;
+            } else {
+                chatbot.userPreferences[currentStep.expects] = response;
+            }
+            
+            // Move to next step
+            chatbot.step++;
+            
+            // Check if we have more steps
+            if (chatbot.step < conversationFlow.length) {
+                // Show typing indicator
+                showTypingIndicator();
+                
+                // Get next message with personalized content
+                let nextMessage = conversationFlow[chatbot.step].bot;
+                nextMessage = nextMessage.replace("{name}", chatbot.user);
+                
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    showBotMessage(
+                        nextMessage,
+                        conversationFlow[chatbot.step].type,
+                        conversationFlow[chatbot.step].options,
+                        conversationFlow[chatbot.step].checklist,
+                        conversationFlow[chatbot.step].card
+                    );
+                }, 1500);
+            }
+        }
+
+        // Show completion screen
+        function showCompletion() {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            const completionDiv = document.createElement('div');
+            completionDiv.className = 'card';
+            completionDiv.innerHTML = `
+                <h3>🎉 Wardrobe Setup Complete!</h3>
+                <p>You've successfully planned your wardrobe organization! Here's what we accomplished:</p>
+                <ul class="checklist" style="margin-top: 15px;">
+                    <li class="checklist-item completed">
+                        <div class="checklist-checkbox">✓</div>
+                        <div class="checklist-text">Identified your wardrobe goals</div>
+                    </li>
+                    <li class="checklist-item completed">
+                        <div class="checklist-checkbox">✓</div>
+                        <div class="checklist-text">Created your color system</div>
+                    </li>
+                    <li class="checklist-item completed">
+                        <div class="checklist-checkbox">✓</div>
+                        <div class="checklist-text">Planned your capsule wardrobe</div>
+                    </li>
+                    <li class="checklist-item completed">
+                        <div class="checklist-checkbox">✓</div>
+                        <div class="checklist-text">Set up organization strategies</div>
+                    </li>
+                    <li class="checklist-item completed">
+                        <div class="checklist-checkbox">✓</div>
+                        <div class="checklist-text">Created maintenance routine</div>
+                    </li>
+                </ul>
+                <p style="margin-top: 15px; color: var(--accent-light); font-weight: 600;">
+                    You're now ready to implement your wardrobe system! Need more help? Just ask! 😊
+                </p>
+            `;
+            
+            chatContainer.appendChild(completionDiv);
+            
+            // Add celebration emojis
+            const emojiDiv = document.createElement('div');
+            emojiDiv.className = 'emoji-reactions';
+            emojiDiv.innerHTML = `
+                <button class="emoji-btn" onclick="addReaction('🎉')">🎉 Celebrate</button>
+                <button class="emoji-btn" onclick="addReaction('💾')">💾 Save Plan</button>
+                <button class="emoji-btn" onclick="addReaction('🔄')">🔄 Start Over</button>
+            `;
+            
+            chatContainer.appendChild(emojiDiv);
+            scrollToBottom();
+            
+            // Update progress to 100%
+            chatbot.progress = 100;
+            updateProgressDisplay();
+        }
+
+        // Handle user input
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (message === '') return;
+            
+            // Show user message
+            showUserMessage(message);
+            
+            // Clear input
+            input.value = '';
+            
+            // Process response
+            processUserResponse(message);
+        }
+
+        // Handle Enter key
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Typing indicator
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'block';
+            scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        // Update progress
+        function updateProgress() {
+            // Calculate progress based on steps and tasks
+            const stepProgress = (chatbot.step / conversationFlow.length) * 60;
+            const taskProgress = (chatbot.tasksCompleted.length / 15) * 40;
+            chatbot.progress = Math.min(100, Math.round(stepProgress + taskProgress));
+            
+            updateProgressDisplay();
+        }
+
+        function updateProgressDisplay() {
+            document.getElementById('progressValue').textContent = `${chatbot.progress}%`;
+            document.getElementById('progressFill').style.width = `${chatbot.progress}%`;
+        }
+
+        // Helper functions
+        function getCurrentTime() {
+            const now = new Date();
+            return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chatContainer');
+            setTimeout(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 100);
+        }
+
+        // Additional features
+        function addReaction(emoji) {
+            showUserMessage(emoji);
+            
+            // Bot responses to reactions
+            const responses = {
+                '🎉': "Woohoo! Let's celebrate! You're doing amazing with your wardrobe organization! 🥳",
+                '💾': "Great idea! I've saved your wardrobe plan. You can always come back and ask me about it! 💾",
+                '🔄': "Want to start fresh? Just refresh the page and we'll begin again! Or we can adjust your current plan. 🔄"
+            };
+            
+            if (responses[emoji]) {
+                setTimeout(() => {
+                    showBotMessage(responses[emoji]);
+                }, 500);
+            }
+        }
+
+        // Export plan function
+        function exportPlan() {
+            const plan = {
+                user: chatbot.user,
+                preferences: chatbot.userPreferences,
+                tasksCompleted: chatbot.tasksCompleted,
+                progress: chatbot.progress,
+                date: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(plan, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `wardrobe-plan-${chatbot.user}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showBotMessage("✅ Plan exported! You can import it later if needed. Want to continue with more tips?");
+        }
+
+        // Reset chat
+        function resetChat() {
+            if (confirm("Start over with a fresh wardrobe plan?")) {
+                location.reload();
+            }
+        }
+
+        // Initialize with some helpful commands
+        const helpCommands = {
+            '/help': "I can help you with: wardrobe organization, color systems, capsule wardrobes, outfit planning, and maintenance tips!",
+            '/tips': "Quick tip: Start by identifying your most-worn 20% of clothes - those are your wardrobe MVPs!",
+            '/progress': `Your current progress: ${chatbot.progress}% complete!`,
+            '/export': exportPlan,
+            '/reset': resetChat
+        };
+
+        // Check for commands in user input
+        document.getElementById('userInput').addEventListener('input', function(e) {
+            const input = e.target.value;
+            if (input.startsWith('/')) {
+                // Show command hint
+                const command = input.split(' ')[0];
+                if (helpCommands[command]) {
+                    // Could show a hint here
+                }
+            }
+        });
+    </script>
+</body>
+</html>
